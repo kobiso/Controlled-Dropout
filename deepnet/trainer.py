@@ -51,7 +51,7 @@ def main():
     board = LockGPU()
   model, train_op, eval_op = LoadExperiment(sys.argv[1], sys.argv[2],
                                             sys.argv[3])
-  model = CreateDeepnet(model, train_op, eval_op)
+  model = CreateDeepnet(model, train_op, eval_op) # 'model' is an original network
   model.Train()
   if use_gpu == 'yes':
     FreeGPU(board)

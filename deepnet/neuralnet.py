@@ -21,6 +21,7 @@ from cos_layer import *
 from sin_layer import *
 from transfer_edge import *
 from soft_transfer_edge import *
+from neuralnet import *
 
 class NeuralNet(object):
 
@@ -43,8 +44,8 @@ class NeuralNet(object):
     cm.CUDAMatrix.init_random(self.net.seed)
     np.random.seed(self.net.seed)
     self.data = None
-    self.layer = []
-    self.edge = []
+    self.layer = [] # has bias
+    self.edge = [] # has weight
     self.input_datalayer = []
     self.output_datalayer = []
     self.datalayer = []
@@ -164,7 +165,7 @@ class NeuralNet(object):
           w = edge.params['weight']
           factor = edge.proto.up_factor
           if i == 0:
-            cm.dot(w.T, inputs, target=layer.state)
+            cm.dot(w.T, inputs, target=layer.state) # dot product between input and w
             if factor != 1:
               layer.state.mult(factor)
           else:
@@ -597,6 +598,16 @@ class NeuralNet(object):
     for edge in self.edge:
       edge.Show()
 
+  def GetRandomNum(self):
+    """Get random column numbers for each layers which are using dropout"""
+    print 'The number of layers:', len(self.layer)
+    ranNum = []
+    for node in range(1, len(self.node_list)-1): # Generate random numbers for only hidden layers
+      ranNum.append(np.random.randint(0, self.node_list[node].dimensions-1, self.node_list[node].dimensions/2))
+
+    for node in self.node_list:
+      print node.inco
+
   def Train(self):
     """Train the model."""
     assert self.t_op is not None, 't_op is None.'
@@ -627,6 +638,9 @@ class NeuralNet(object):
       sys.stdout.write('\rTrain Step: %d' % step)
       sys.stdout.flush()
       self.GetTrainBatch()
+
+      #self.GetRandomNum()
+
       losses = self.TrainOneBatch(step)
       if stats:
         for acc, loss in zip(stats, losses):
