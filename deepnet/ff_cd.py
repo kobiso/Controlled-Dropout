@@ -25,7 +25,7 @@ from neuralnet import *
 
 
 class ControlledDropoutNet(object):
-    def __init__(self, net, t_op=None, e_op=None):
+    def __init__(self, net, small_net=None, t_op=None, e_op=None):
         self.net = None
         if isinstance(net, deepnet_pb2.Model):
             self.net = net  # ff
@@ -60,6 +60,9 @@ class ControlledDropoutNet(object):
             self.verbose = self.e_op.verbose
             self.batchsize = self.e_op.batchsize
         self.train_stop_steps = sys.maxint
+
+        # Add variables for small net
+        self.small_net = NeuralNet(small_net, t_op, e_op)
 
     def PrintNetwork(self):
         for layer in self.layer:
