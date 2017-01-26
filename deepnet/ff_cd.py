@@ -63,6 +63,7 @@ class ControlledDropoutNet(object):
 
         # Add variables for small net
         self.small_net = NeuralNet(small_net, t_op, e_op)
+        self.randNum = []
 
     def PrintNetwork(self):
         for layer in self.layer:
@@ -234,10 +235,10 @@ class ControlledDropoutNet(object):
             else:
                 self.AccumulateDeriv(edge.node1, edge, layer.deriv)
             self.UpdateEdgeParams(edge, layer.deriv, step)
-            # $$ Update bias into the original bias vector here
+            # $$ Update weight into the original bias vector here
         # Update the parameters on this layer (i.e., the bias).
         self.UpdateLayerParams(layer, step)
-        # $$ Update small weight into the original weight matrix here
+        # $$ Update small bias into the original weight matrix here
         return loss
 
     def AccumulateDeriv(self, layer, edge, deriv):
@@ -440,8 +441,7 @@ class ControlledDropoutNet(object):
         prec /= numdims
         return ap, prec, ap_list, prec_list
 
-    def WriteRepresentationToDisk(self, layernames, output_dir, memory='1G',
-                                  dataset='test', drop=False):
+    def WriteRepresentationToDisk(self, layernames, output_dir, memory='1G', dataset='test', drop=False):
         layers = [self.GetLayerByName(lname) for lname in layernames]
         numdim_list = [layer.state.shape[0] for layer in layers]
         if dataset == 'train':
@@ -605,21 +605,23 @@ class ControlledDropoutNet(object):
             edge.Show()
 
     def GetRandomNum(self):
-        """Get random column numbers for each layers which are using dropout"""
-        print 'The number of layers:', len(self.layer)
-        ranNum = []
+        """Get random column numbers for each layers which are using dropout."""
+        del self.randNum[:]
         for node in range(1, len(self.node_list) - 1):  # Generate random numbers for only hidden layers
-            ranNum.append(
+            self.randNum.append(
                 np.random.randint(0, self.node_list[node].dimensions - 1, self.node_list[node].dimensions / 2))
 
-        for node in self.node_list:
-            print node.inco
+    def ConstructSmallNet(self):
+        """Construct parameters(w, b) for small network with random numbers."""
+
+
 
     def Train(self):
         """Train the model."""
         assert self.t_op is not None, 't_op is None.'
         assert self.e_op is not None, 'e_op is None.'
         self.SetUpTrainer()
+        self.small_net.SetUpTrainer() # SMALL
         step = self.t_op.current_step
         stop = self.TrainStopCondition(step)
         stats = []
@@ -644,19 +646,32 @@ class ControlledDropoutNet(object):
         while not stop:
             sys.stdout.write('\rTrain Step: %d' % step)
             sys.stdout.flush()
-            self.GetTrainBatch()
 
-            # self.GetRandomNum()
+            # 0. Get training batch
+            # self.GetTrainBatch() # For orignial net
+            self.small_net.GetTrainBatch()  # SMALL) for small net
 
-            losses = self.TrainOneBatch(step)
-            if stats:
+            # 1. Get random numbers
+            self.GetRandomNum()
+
+            # 2. Construct parameters(w, b) for small network
+            self.ConstructSmallNet()
+
+            # 3. Train the batch
+            # losses = self.TrainOneBatch(step) # for orignial net
+            losses = self.small_net.TrainOneBatch(step) # SMALL) for small net
+
+            # 4. Update the parameters(W, b) of original network from small network
+
+            # 5. Save the training accuracy
+            if stats: # Save the training accuracy
                 for acc, loss in zip(stats, losses):
                     Accumulate(acc, loss)
             else:
                 stats = losses
             step += 1
-            if self.ShowNow(step):
-                self.Show()
+            # if self.ShowNow(step):
+            #     self.Show()
             if self.EvalNow(step):
                 # Print out training stats.
                 sys.stdout.write('\rStep %d ' % step)
