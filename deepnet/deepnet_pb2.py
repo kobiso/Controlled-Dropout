@@ -206,6 +206,10 @@ _MODEL_MODELTYPE = descriptor.EnumDescriptor(
       name='FAST_DROPOUT_NET', index=5, number=5,
       options=None,
       type=None),
+    descriptor.EnumValueDescriptor(
+      name='CONTROLLED_DROPOUT_NET', index=6, number=6,
+      options=None,
+      type=None),
   ],
   containing_type=None,
   options=None,

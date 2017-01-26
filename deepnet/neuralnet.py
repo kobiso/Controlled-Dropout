@@ -21,14 +21,13 @@ from cos_layer import *
 from sin_layer import *
 from transfer_edge import *
 from soft_transfer_edge import *
-from neuralnet import *
 
 class NeuralNet(object):
 
   def __init__(self, net, t_op=None, e_op=None):
     self.net = None
     if isinstance(net, deepnet_pb2.Model):
-      self.net = net
+      self.net = net #ff
     elif isinstance(net, str) or isinstance(net, unicode):
       self.net = ReadModel(net)
     self.t_op = None
@@ -38,7 +37,7 @@ class NeuralNet(object):
       self.t_op = ReadOperation(t_op)
     self.e_op = None
     if isinstance(e_op, deepnet_pb2.Operation):
-      self.e_op = e_op
+      self.e_op = e_op #ff
     elif isinstance(e_op, str) or isinstance(net, unicode):
       self.e_op = ReadOperation(e_op)
     cm.CUDAMatrix.init_random(self.net.seed)
@@ -53,13 +52,15 @@ class NeuralNet(object):
     self.unclamped_layer = []
     self.verbose = False
     self.batchsize = 0
-    if self.t_op:
+    if self.t_op: #ff
       self.verbose = self.t_op.verbose
       self.batchsize = self.t_op.batchsize
     elif self.e_op:
       self.verbose = self.e_op.verbose
       self.batchsize = self.e_op.batchsize
     self.train_stop_steps = sys.maxint
+
+
 
   def PrintNetwork(self):
     for layer in self.layer:
@@ -230,8 +231,10 @@ class NeuralNet(object):
       else:
         self.AccumulateDeriv(edge.node1, edge, layer.deriv)
       self.UpdateEdgeParams(edge, layer.deriv, step)
+      # $$ Update bias into the original bias vector here
     # Update the parameters on this layer (i.e., the bias).
     self.UpdateLayerParams(layer, step)
+    # $$ Update small weight into the original weight matrix here
     return loss
 
   def AccumulateDeriv(self, layer, edge, deriv):

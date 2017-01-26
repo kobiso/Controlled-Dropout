@@ -206,6 +206,7 @@ message Model {
     DBM=3;
     SPARSE_CODER=4;
     FAST_DROPOUT_NET=5;
+    CONTROLLED_DROPOUT_NET=6;
   }
   required ModelType model_type = 2;
   repeated deepnet.Layer layer = 3;
