@@ -613,7 +613,12 @@ class ControlledDropoutNet(object):
 
     def ConstructSmallNet(self):
         """Construct parameters(w, b) for small network with random numbers."""
-
+        # weight: self.node_list[i].incoming_edge.params['weight'] (0~3): (784x1024),(1024x1024),(1024x2048),(2048x10)
+        # bias: self.node_list.params['bias'] (0~4): (-),(10x1),(1024,1),(1024,1),(2048,1)
+        a = self.edge[0].params['weight']
+        b = self.layer[1].params['bias']
+        a.numpy_array[0][0]=0
+        print 'a', a.numpy_array[0][0]
 
 
     def Train(self):
