@@ -607,9 +607,9 @@ class ControlledDropoutNet(object):
     def GetRandomNum(self):
         """Get random column numbers for each layers which are using dropout."""
         del self.randNum[:]
-        for node in range(1, len(self.node_list) - 1):  # Generate random numbers for only hidden layers
+        for node in range(1, len(self.node_list) - 1):  # Generate random numbers for only hidden layers (sorted, no-duplication)
             self.randNum.append(
-                np.random.randint(0, self.node_list[node].dimensions - 1, self.node_list[node].dimensions / 2))
+                np.sort(np.random.choice(range(self.node_list[node].dimensions), self.node_list[node].dimensions/2, replace=False))) #no duplication
 
     def ConstructSmallNet(self):
         """Construct parameters(w, b) for small network with random numbers."""
@@ -619,6 +619,7 @@ class ControlledDropoutNet(object):
         b = self.layer[1].params['bias']
         a.numpy_array[0][0]=0
         print 'a', a.numpy_array[0][0]
+        # 1. slice the matrix of original and swipe with the small net
 
 
     def Train(self):
