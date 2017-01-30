@@ -613,14 +613,31 @@ class ControlledDropoutNet(object):
 
     def ConstructSmallNet(self):
         """Construct parameters(w, b) for small network with random numbers."""
-        # weight: self.node_list[i].incoming_edge.params['weight'] (0~3): (784x1024),(1024x1024),(1024x2048),(2048x10)
-        # bias: self.node_list.params['bias'] (0~4): (-),(10x1),(1024,1),(1024,1),(2048,1)
-        a = self.edge[0].params['weight']
-        b = self.layer[1].params['bias']
-        a.numpy_array[0][0]=0
-        print 'a', a.numpy_array[0][0]
-        # 1. slice the matrix of original and swipe with the small net
+        # weight: self.edge[i].params['weight'] (0~3): (784x1024),(1024x1024),(1024x2048),(2048x10)
+        # bias: self.layer[i].params['bias'] (0~4): (-),(10x1),(1024,1),(1024,1),(2048,1)
 
+        # Update weight
+        self.small_net.edge[0].params['weight'].numpy_array = \
+            self.edge[0].params['weight'].numpy_array[..., self.randNum[0]]
+        for i in range(len(self.randNum) - 1):
+            self.small_net.edge[i + 1].params['weight'].numpy_array = \
+                self.edge[i + 1].params['weight'].numpy_array[self.randNum[i][:, np.newaxis], self.randNum[i + 1]]
+
+        self.small_net.edge[len(self.randNum)].params['weight'].numpy_array = \
+            self.edge[len(self.randNum)].params['weight'].numpy_array[self.randNum[len(self.randNum)-1], ...]
+
+        # a = self.edge[0].params['weight'].numpy_array[..., self.randNum[0]]
+        # b = self.edge[1].params['weight'].numpy_array[self.randNum[0][:,np.newaxis], self.randNum[1]]
+        # c = self.edge[2].params['weight'].numpy_array[self.randNum[1][:,np.newaxis], self.randNum[2]]
+        # d = self.edge[3].params['weight'].numpy_array[self.randNum[2], ...]
+
+        # Update bias
+        for i in range(len(self.randNum)):
+            self.small_net.layer[i+2].params['bias'].numpy_array = self.layer[i+2].params['bias'].numpy_array[self.randNum[i]]
+
+        # e = self.layer[2].params['bias'].numpy_array[self.randNum[0]]
+        # f = self.layer[3].params['bias'].numpy_array[self.randNum[1]]
+        # g = self.layer[4].params['bias'].numpy_array[self.randNum[2]]
 
     def Train(self):
         """Train the model."""
