@@ -1,5 +1,5 @@
 import os
-use_gpu = os.environ.get('USE_GPU', 'auto')
+use_gpu = os.environ.get('USE_GPU', 'no')
 assert use_gpu in ['auto', 'yes', 'no'], "environment variable USE_GPU, should be one of 'auto', 'yes', 'no'."
 if use_gpu == 'auto':
   try:

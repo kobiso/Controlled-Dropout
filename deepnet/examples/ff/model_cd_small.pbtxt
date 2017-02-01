@@ -1,11 +1,10 @@
-name: "mnist_3layer_relu_dropout"
+name: "mnist_3layer_relu"
 model_type: FEED_FORWARD_NET
 layer {
   name: "input_layer"
   dimensions: 784
   is_input: true
   hyperparams {
-    dropout_prob: 0.2
     activation: LOGISTIC
   }
   data_field {
@@ -25,11 +24,8 @@ layer {
   is_output: true
   loss_function: CROSS_ENTROPY
   hyperparams {
-    sparsity: false
-    dropout: false
     apply_l2_decay: false
     activation: SOFTMAX
-    enable_display: false
   }
   data_field {
     train: "train_labels"
@@ -48,6 +44,12 @@ layer {
     name: "bias"
     initialization: CONSTANT
   }
+  hyperparams {
+    apply_l2_decay: false
+  }
+  performance_stats {
+    compute_sparsity: true
+  }
 }
 layer {
   name: "hidden2"
@@ -55,6 +57,12 @@ layer {
   param {
     name: "bias"
     initialization: CONSTANT
+  }
+  hyperparams {
+    apply_l2_decay: false
+  }
+  performance_stats {
+    compute_sparsity: true
   }
 }
 layer {
@@ -64,6 +72,12 @@ layer {
     name: "bias"
     initialization: CONSTANT
   }
+  hyperparams {
+    apply_l2_decay: false
+  }
+  performance_stats {
+    compute_sparsity: true
+  }
 }
 edge {
   node1: "input_layer"
@@ -71,6 +85,7 @@ edge {
   param {
     name: "weight"
     initialization: DENSE_GAUSSIAN_SQRT_FAN_IN
+    sigma: 1.0
   }
 }
 edge {
@@ -101,18 +116,14 @@ edge {
   }
 }
 hyperparams {
-  base_epsilon: 1.0
-  epsilon_decay: INVERSE_T
+  base_epsilon: 0.01
+  epsilon_decay: EXPONENTIAL
   epsilon_decay_half_life: 10000
-  initial_momentum: 0.5
-  final_momentum: 0.99
-  momentum_change_steps: 100000
-  dropout: true
-  dropout_prob: 0.5
-  apply_weight_norm: true
-  weight_norm: 3.0
-  apply_l2_decay: false
+  initial_momentum: 0.9
+  final_momentum: 0.9
+  momentum_change_steps: 5000
+  apply_l2_decay: true
+  l2_decay: 0.001
   activation: RECTIFIED_LINEAR
-  adapt: NO_ADAPT
 }
 seed: 42
