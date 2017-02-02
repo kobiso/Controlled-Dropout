@@ -22,6 +22,7 @@ from sin_layer import *
 from transfer_edge import *
 from soft_transfer_edge import *
 from neuralnet import *
+import eigenmat as mat
 
 
 class ControlledDropoutNet(object):
@@ -611,38 +612,52 @@ class ControlledDropoutNet(object):
             self.randNum.append(
                 np.sort(np.random.choice(range(self.node_list[node].dimensions), self.node_list[node].dimensions/2, replace=False))) #no duplication
 
+    # TODO: Revise 'ConstructSmallNet' and 'UpdateOriginalNet' for a CPU environment
     def ConstructSmallNet(self):
         """Construct parameters(w, b) for small network with random numbers."""
         # weight: self.edge[i].params['weight'] (0~3): (784x1024),(1024x1024),(1024x2048),(2048x10)
         # bias: self.layer[i].params['bias'] (0~4): (-),(10x1),(1024,1),(1024,1),(2048,1)
 
         # Update weight
-        self.small_net.edge[0].params['weight'].numpy_array = \
-            self.edge[0].params['weight'].numpy_array[..., self.randNum[0]]
+        self.small_net.edge[0].params['weight'].overwrite(self.edge[0].params['weight'].numpy_array[..., self.randNum[0]])
+
         for i in range(len(self.randNum) - 1):
-            self.small_net.edge[i + 1].params['weight'].numpy_array = \
-                self.edge[i + 1].params['weight'].numpy_array[self.randNum[i][:, np.newaxis], self.randNum[i + 1]]
-        self.small_net.edge[len(self.randNum)].params['weight'].numpy_array = \
-            self.edge[len(self.randNum)].params['weight'].numpy_array[self.randNum[len(self.randNum)-1], ...]
+            self.small_net.edge[i + 1].params['weight'].overwrite(\
+                self.edge[i + 1].params['weight'].numpy_array[self.randNum[i][:, np.newaxis], self.randNum[i + 1]])
+        self.small_net.edge[len(self.randNum)].params['weight'].overwrite(\
+            self.edge[len(self.randNum)].params['weight'].numpy_array[self.randNum[len(self.randNum)-1], ...])
 
         # Update bias
         for i in range(len(self.randNum)):
-            self.small_net.layer[i+2].params['bias'].numpy_array = self.layer[i+2].params['bias'].numpy_array[self.randNum[i]]
+            self.small_net.layer[i+2].params['bias'].overwrite(self.layer[i+2].params['bias'].numpy_array[self.randNum[i]])
 
     def UpdateOriginalNet(self):
         """Update parameters(W, b) of small net to parameters(W, b) of original net"""
+        # There is a simple way to just
+
         # Update weight
-        self.edge[0].params['weight'].numpy_array[..., self.randNum[0]] = \
-            self.small_net.edge[0].params['weight'].numpy_array
+        # Method 1
+        indices1 = mat.EigenMatrix(self.randNum[0][np.newaxis, :])
+        indices2 = mat.EigenMatrix(np.arange(len(self.randNum[0]))[np.newaxis,:])
+        self.edge[0].params['weight'].swap_columns(indices1,indices2,self.small_net.edge[0].params['weight'])
+
+        # Method 2
         for i in range(len(self.randNum) - 1):
-            self.edge[i + 1].params['weight'].numpy_array[self.randNum[i][:, np.newaxis], self.randNum[i + 1]] = \
+            temp = np.copy(self.edge[i + 1].params['weight'].numpy_array)
+            temp[self.randNum[i][:, np.newaxis], self.randNum[i + 1]] = \
                 self.small_net.edge[i + 1].params['weight'].numpy_array
-        self.edge[len(self.randNum)].params['weight'].numpy_array[self.randNum[len(self.randNum) - 1], ...] = \
+            self.edge[i + 1].params['weight'].overwrite(temp)
+
+        temp = np.copy(self.edge[len(self.randNum)].params['weight'].numpy_array)
+        temp[self.randNum[len(self.randNum) - 1], ...] = \
             self.small_net.edge[len(self.randNum)].params['weight'].numpy_array
+        self.edge[len(self.randNum)].params['weight'].overwrite(temp)
 
         # Update bias
         for i in range(len(self.randNum)):
-            self.layer[i + 2].params['bias'].numpy_array[self.randNum[i]] = self.small_net.layer[i+2].params['bias'].numpy_array
+            temp = np.copy(self.layer[i + 2].params['bias'].numpy_array)
+            temp[self.randNum[i]] = self.small_net.layer[i+2].params['bias'].numpy_array
+            self.layer[i + 2].params['bias'].overwrite(temp)
 
     def Train(self):
         """Train the model."""
@@ -690,7 +705,7 @@ class ControlledDropoutNet(object):
             losses = self.small_net.TrainOneBatch(step) # SMALL) for small net
 
             # 4. Update the parameters(W, b) of original network from small network
-            self.UpdateOriginalNet()
+            #self.UpdateOriginalNet()
 
             # 5. Save the training accuracy
             if stats: # Save the training accuracy

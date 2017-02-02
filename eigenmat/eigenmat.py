@@ -1275,7 +1275,9 @@ class EigenMatrix(object):
     values in <self>.
     """
 
-    err_code = _eigenmat.setSelectedRows(self.p_mat, source.p_mat, indices.p_mat)
+    # err_code = _eigenmat.setSelectedRows(self.p_mat, source.p_mat, indices.p_mat)
+    err_code = _eigenmat.setSelectedRows(source.p_mat, self.p_mat, indices.p_mat)
+
     if err_code:
       raise generate_exception(err_code)
 
