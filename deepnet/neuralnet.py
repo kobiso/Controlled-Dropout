@@ -21,6 +21,7 @@ from cos_layer import *
 from sin_layer import *
 from transfer_edge import *
 from soft_transfer_edge import *
+import eigenmat as mat
 
 class NeuralNet(object):
 
@@ -137,7 +138,7 @@ class NeuralNet(object):
       raise Exception('Invalid net for backprop. Cycle exists.')
     return node_list
 
-  def ComputeUp(self, layer, train=False, step=0, maxsteps=0):
+  def ComputeUp(self, layer, step, train=False, maxsteps=0):
     """
     Computes the state of `layer', given the state of its incoming neighbours.
 
@@ -150,7 +151,7 @@ class NeuralNet(object):
     """
     layer.dirty = False
     perf = None
-    if layer.is_input or layer.is_initialized:
+    if layer.is_input or layer.is_initialized: # for input layer
       layer.GetData()
     else:
       for i, edge in enumerate(layer.incoming_edge):
@@ -176,7 +177,21 @@ class NeuralNet(object):
         layer.state.add_col_vec(b)
       else:
         layer.state.add_dot(b, layer.replicated_neighbour.NN)
-      layer.ApplyActivation()
+      layer.ApplyActivation() # apply activation function here
+      """
+      if not self.EvalNow(step):
+        if layer.activation==3:
+          # Controlled dropout
+          a= layer.state.shape[0]
+          b= np.random.choice(range(2),(a,1))
+          layer.state.mult_by_col(mat.EigenMatrix(b))
+      else:
+        # multiply the dropout rate
+        if layer.activation==3:
+          # Controlled dropout
+          layer.state.mult(0.5)
+      """
+
       if layer.hyperparams.sparsity:
         layer.state.sum(axis=1, target=layer.dimsize)
         perf = deepnet_pb2.Metrics()
@@ -329,7 +344,7 @@ class NeuralNet(object):
     Returns:
       List of losses incurred at each output layer.
     """
-    losses1 = self.ForwardPropagate(train=True)
+    losses1 = self.ForwardPropagate(train=True, step=step)
     losses2 = self.BackwardPropagate(step)
     losses1.extend(losses2)
     return losses1
