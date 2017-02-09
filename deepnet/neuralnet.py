@@ -25,7 +25,7 @@ import eigenmat as mat
 
 class NeuralNet(object):
 
-  def __init__(self, net, t_op=None, e_op=None):
+  def __init__(self, net, cd=False, t_op=None, e_op=None):
     self.net = None
     if isinstance(net, deepnet_pb2.Model):
       self.net = net #ff
@@ -60,8 +60,7 @@ class NeuralNet(object):
       self.verbose = self.e_op.verbose
       self.batchsize = self.e_op.batchsize
     self.train_stop_steps = sys.maxint
-
-
+    self.cd = cd
 
   def PrintNetwork(self):
     for layer in self.layer:
@@ -178,19 +177,19 @@ class NeuralNet(object):
       else:
         layer.state.add_dot(b, layer.replicated_neighbour.NN)
       layer.ApplyActivation() # apply activation function here
-      """
-      if not self.EvalNow(step):
-        if layer.activation==3:
-          # Controlled dropout
-          a= layer.state.shape[0]
-          b= np.random.choice(range(2),(a,1))
-          layer.state.mult_by_col(mat.EigenMatrix(b))
-      else:
-        # multiply the dropout rate
-        if layer.activation==3:
-          # Controlled dropout
-          layer.state.mult(0.5)
-      """
+
+      if self.cd == True:
+        if not self.EvalNow(step):
+          if layer.activation==3:
+            # Controlled dropout
+            a= layer.state.shape[0]
+            b= np.random.choice(range(2),(a,1))
+            layer.state.mult_by_col(mat.EigenMatrix(b))
+        else:
+          # multiply the dropout rate
+          if layer.activation==3:
+            # Controlled dropout
+            layer.state.mult(0.5)
 
       if layer.hyperparams.sparsity:
         layer.state.sum(axis=1, target=layer.dimsize)
