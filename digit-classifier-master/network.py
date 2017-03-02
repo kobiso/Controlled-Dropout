@@ -1,14 +1,12 @@
 import os
 import numpy as np
 import random
-
+import time
 from activations import sigmoid, sigmoid_prime
-
 
 class NeuralNetwork(object):
 
-    def __init__(self, sizes=list(), learning_rate=1.0, mini_batch_size=16,
-                 epochs=10):
+    def __init__(self, sizes=list(), learning_rate=1.0, mini_batch_size=16, epochs=10):
         """Initialize a Neural Network model.
 
         Parameters
@@ -24,7 +22,6 @@ class NeuralNetwork(object):
             Size of each mini batch of training examples as used by Stochastic
             Gradient Descent. Denotes after how many examples the weights
             and biases would be updated. Default size is 16.
-
         """
         # Input layer is layer 0, followed by hidden layers layer 1, 2, 3...
         self.sizes = sizes
@@ -64,11 +61,10 @@ class NeuralNetwork(object):
             validation accuracy after each epoch.
 
         """
+        start_time = time.time()
         for epoch in range(self.epochs):
             random.shuffle(training_data)
-            mini_batches = [
-                training_data[k:k + self.mini_batch_size] for k in
-                range(0, len(training_data), self.mini_batch_size)]
+            mini_batches = [training_data[k:k + self.mini_batch_size] for k in range(0, len(training_data), self.mini_batch_size)]
 
             for mini_batch in mini_batches:
                 nabla_b = [np.zeros(bias.shape) for bias in self.biases]
@@ -79,18 +75,15 @@ class NeuralNetwork(object):
                     nabla_b = [nb + dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
                     nabla_w = [nw + dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
 
-                self.weights = [
-                    w - (self.eta / self.mini_batch_size) * dw for w, dw in
-                    zip(self.weights, nabla_w)]
-                self.biases = [
-                    b - (self.eta / self.mini_batch_size) * db for b, db in
-                    zip(self.biases, nabla_b)]
+                self.weights = [w - (self.eta / self.mini_batch_size) * dw for w, dw in zip(self.weights, nabla_w)]
+                self.biases = [b - (self.eta / self.mini_batch_size) * db for b, db in zip(self.biases, nabla_b)]
 
             if validation_data:
                 accuracy = self.validate(validation_data) / 100.0
                 print("Epoch {0}, accuracy {1} %.".format(epoch + 1, accuracy))
             else:
                 print("Processed epoch {0}.".format(epoch))
+        print ("Running time: %s seconds" % (time.time() - start_time))
 
     def validate(self, validation_data):
         """Validate the Neural Network on provided validation data. It uses the

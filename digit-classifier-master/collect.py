@@ -2,9 +2,7 @@ import os
 import gzip
 import cPickle
 import wget
-
 import numpy as np
-
 
 def load_mnist():
     if not os.path.exists(os.path.join(os.curdir, 'data')):
