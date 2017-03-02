@@ -6,14 +6,14 @@ from activations import sigmoid, sigmoid_prime
 
 class NeuralNetwork(object):
 
-    def __init__(self, sizes=list(), learning_rate=1.0, mini_batch_size=16, epochs=10):
+    def __init__(self, sizes=list(), learning_rate=1.0, mini_batch_size=16, epochs=10, dropout=0):
         """Initialize a Neural Network model.
 
         Parameters
         ----------
         sizes : list, optional
-            A list of integers specifying number of neurns in each layer. Not
-            required if a pretrained model is used.
+            A list of integers specifying number of neurons in each layer.
+            Not required if a pretrained model is used.
 
         learning_rate : float, optional
             Learning rate for gradient descent optimization. Defaults to 1.0
@@ -29,8 +29,7 @@ class NeuralNetwork(object):
 
         # First term corresponds to layer 0 (input layer). No weights enter the
         # input layer and hence self.weights[0] is redundant.
-        self.weights = [np.array([0])] + [np.random.randn(y, x) for y, x in
-                                          zip(sizes[1:], sizes[:-1])]
+        self.weights = [np.array([0])] + [np.random.randn(y, x) for y, x in zip(sizes[1:], sizes[:-1])]
 
         # Input layer does not have any biases. self.biases[0] is redundant.
         self.biases = [np.random.randn(y, 1) for y in sizes]
@@ -46,8 +45,9 @@ class NeuralNetwork(object):
         self.mini_batch_size = mini_batch_size
         self.epochs = epochs
         self.eta = learning_rate
+        self.dropout = dropout # 0: without dropout, 1: with dropout, 2: with controlled-dropout
 
-    def fit(self, training_data, validation_data=None):
+    def fit(self, training_data, validation_data=None, test_data=None):
         """Fit (train) the Neural Network on provided training data. Fitting is
         carried out using Stochastic Gradient Descent Algorithm.
 
@@ -78,12 +78,14 @@ class NeuralNetwork(object):
                 self.weights = [w - (self.eta / self.mini_batch_size) * dw for w, dw in zip(self.weights, nabla_w)]
                 self.biases = [b - (self.eta / self.mini_batch_size) * db for b, db in zip(self.biases, nabla_b)]
 
-            if validation_data:
-                accuracy = self.validate(validation_data) / 100.0
-                print("Epoch {0}, accuracy {1} %.".format(epoch + 1, accuracy))
+            if validation_data or test_data:
+                v_accuracy = self.validate(validation_data) / 100.0 if validation_data else None
+                t_accuracy = self.validate(test_data) / 100.0 if test_data else None
+                print("Epoch {0}, V_accuracy {1} %, T_accuracy {2} %.".format(epoch + 1, v_accuracy, t_accuracy))
             else:
                 print("Processed epoch {0}.".format(epoch))
         print ("Running time: %s seconds" % (time.time() - start_time))
+        print ("Size {0}, LearningRate {1}, Batch {2}, Epoch {3}" .format(self.sizes, self.eta, self.mini_batch_size, self.epochs))
 
     def validate(self, validation_data):
         """Validate the Neural Network on provided validation data. It uses the
@@ -122,10 +124,18 @@ class NeuralNetwork(object):
     def _forward_prop(self, x):
         self._activations[0] = x
         for i in range(1, self.num_layers):
-            self._zs[i] = (
-                self.weights[i].dot(self._activations[i - 1]) + self.biases[i]
-            )
+            self._zs[i] = (self.weights[i].dot(self._activations[i - 1]) + self.biases[i])
             self._activations[i] = sigmoid(self._zs[i])
+            """
+            if self.dropout == 0 or validation_data:  # Without dropout or Validation step
+                continue
+            elif self.dropout == 1:  # With dropout
+                continue
+                # dropout
+            elif self.dropout == 2:  # With controlled-dropout
+                continue
+                # controlled-dropout
+            """
 
     def _back_prop(self, x, y):
         nabla_b = [np.zeros(bias.shape) for bias in self.biases]
