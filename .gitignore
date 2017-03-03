@@ -1,0 +1,12 @@
+
+*.pyc
+
+\.idea/
+
+cudamat/
+
+deepnet/examples/mnist/
+
+deepnet/examples/cifar10/
+
+deepnet/sss\.py

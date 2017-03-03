@@ -178,12 +178,14 @@ class NeuralNet(object):
         layer.state.add_dot(b, layer.replicated_neighbour.NN)
       layer.ApplyActivation() # apply activation function here
 
+      # TODO: Done_Controlled dropout without dimension reduction
       if self.cd == True:
         if not self.EvalNow(step):
           if layer.activation==3:
             # Controlled dropout
-            a= layer.state.shape[0]
-            b= np.random.choice(range(2),(a,1))
+            # a= layer.state.shape[0]
+            # b= np.random.choice(range(2),(a,1))
+            b = np.array([[1], [0], [1], [0], [1], [0], [1], [0], [1], [0]])
             layer.state.mult_by_col(mat.EigenMatrix(b))
         else:
           # multiply the dropout rate

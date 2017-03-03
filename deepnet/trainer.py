@@ -36,7 +36,7 @@ def LoadExperiment(model_file, small_model_file, train_op_file, eval_op_file):
 
 def CreateDeepnet(model, small_model, train_op, eval_op):
   if model.model_type == deepnet_pb2.Model.FEED_FORWARD_NET:
-    return NeuralNet(model, train_op, eval_op)
+    return NeuralNet(model, True, train_op, eval_op)
   elif model.model_type == deepnet_pb2.Model.DBM:
     return DBM(model, train_op, eval_op)
   elif model.model_type == deepnet_pb2.Model.DBN:

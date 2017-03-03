@@ -43,7 +43,7 @@ layer {
 }
 layer {
   name: "hidden1"
-  dimensions: 1024
+  dimensions: 10
   param {
     name: "bias"
     initialization: CONSTANT
@@ -51,7 +51,7 @@ layer {
 }
 layer {
   name: "hidden2"
-  dimensions: 1024
+  dimensions: 10
   param {
     name: "bias"
     initialization: CONSTANT
@@ -59,7 +59,7 @@ layer {
 }
 layer {
   name: "hidden3"
-  dimensions: 2048
+  dimensions: 10
   param {
     name: "bias"
     initialization: CONSTANT

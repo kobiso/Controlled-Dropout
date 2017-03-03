@@ -63,7 +63,8 @@ class ControlledDropoutNet(object):
         self.train_stop_steps = sys.maxint
 
         # Add variables for small net
-        self.small_net = NeuralNet(small_net, t_op, e_op)
+        self.small_net = NeuralNet(small_net, False, t_op, e_op)
+        # self.small_net_cd = NeuralNet(small_net, True, t_op, e_op)
         self.randNum = []
 
     def PrintNetwork(self):
@@ -610,10 +611,9 @@ class ControlledDropoutNet(object):
         del self.randNum[:]
         for node in range(1, len(self.node_list) - 1):  # Generate random numbers for only hidden layers (sorted, no-duplication)
             self.randNum.append(
-                np.sort(np.random.choice(range(self.node_list[node].dimensions), self.node_list[node].dimensions/2, replace=False))) #no duplication
+                np.array([0,2,4,6,8]))
+                # np.sort(np.random.choice(range(self.node_list[node].dimensions), self.node_list[node].dimensions/2, replace=False))) #no duplication
 
-    # TODO 1. Reduce learning rate and test
-    # TODO 2. There were some training steps parameters were not updated
     # TODO 3. Implement column wise dropout whose result should be equal with Controlled Dropout code
     def ConstructSmallNet(self):
         """Construct parameters(w, b) for small network with random numbers."""
@@ -623,7 +623,7 @@ class ControlledDropoutNet(object):
         # Update weight
         self.small_net.edge[0].params['weight'].overwrite(self.edge[0].params['weight'].numpy_array[..., self.randNum[0]])
 
-        for i in range(len(self.randNum) - 1):
+        for i in range(len(self.randNum) - 1): # TODO: Can be combined with only a 'for' statement
             self.small_net.edge[i + 1].params['weight'].overwrite(\
                 self.edge[i + 1].params['weight'].numpy_array[self.randNum[i][:, np.newaxis], self.randNum[i + 1]])
         self.small_net.edge[len(self.randNum)].params['weight'].overwrite(\
@@ -718,7 +718,7 @@ class ControlledDropoutNet(object):
                 stats = losses
             step += 1
             # if self.ShowNow(step):
-            #     self.Show()
+            #     self.Show()l
             if self.EvalNow(step):
                 # Print out training stats.
                 sys.stdout.write('\rStep %d ' % step)

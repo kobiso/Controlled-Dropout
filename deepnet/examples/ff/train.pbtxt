@@ -4,10 +4,10 @@ stopcondition {
   steps: 1000000
 }
 train: true
-batchsize: 100
-data_proto: "/home/hpc/github/deepnet/deepnet/examples/mnist/mnist.pbtxt"
+batchsize: 10
+data_proto: "/home/hpc/github/ControlledDropout/deepnet/examples/mnist/mnist.pbtxt"
 eval_after: 500
 checkpoint_after: 10000
-checkpoint_directory: "/home/hpc/github/deepnet/deepnet/examples/output"
+checkpoint_directory: "/home/hpc/github/ControlledDropout/deepnet/examples/output"
 randomize: true
 show_after: 500
