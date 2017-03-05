@@ -39,7 +39,6 @@ class Disk(object):
     else:
       self.keys = [None]*self.num_data
 
-
   def AddSparseData(self, data, chunk):
     """Appends chunk to data."""
     if data is None:
@@ -47,6 +46,7 @@ class Disk(object):
     else:
       return sp.vstack((data, chunk)).tocsr()
 
+# TODO: Do not make it random
   def Get(self, batchsize):
     """Reads data from disk.
     Args:
@@ -221,6 +221,7 @@ class Cache(object):
       self.data = self.parent.Get(self._maxpos)
       self.datasize = self.data[0].shape[0]
 
+    self.randomize=False # TODO: just for test, erase it later
     if self.randomize:
       # Shuffle the data. Need to make sure same shuffle is applied to all data
       # pieces in the list.
@@ -395,6 +396,7 @@ class GPUCache(Cache):
       if self.empty or self._maxpos < self.parent._maxpos:
         self.LoadData()
         self.empty = False
+      self.randomize=False #TODO: erase later
       if self.randomize and self._maxpos == self.parent._maxpos:
         # Shuffle if randomize is True and parent has not already shuffled it.
         self.ShuffleData()
