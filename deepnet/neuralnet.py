@@ -183,15 +183,17 @@ class NeuralNet(object):
         if not self.EvalNow(step):
           if layer.activation==3:
             # Controlled dropout
-            # a= layer.state.shape[0]
-            # b= np.random.choice(range(2),(a,1))
-            b = np.array([[1], [0], [1], [0], [1], [0], [1], [0], [1], [0]])
+            a= layer.state.shape[0]
+            b= np.random.choice(range(2),(a,1))
+            # b = np.array([[1], [0], [1], [0], [1], [0], [1], [0], [1], [0]])
             layer.state.mult_by_col(mat.EigenMatrix(b))
+        """
         else:
           # multiply the dropout rate
-          if layer.activation==3:
+          if layer.activation==3: # when it is hidden layer
             # Controlled dropout
             layer.state.mult(0.5)
+        """
 
       if layer.hyperparams.sparsity:
         layer.state.sum(axis=1, target=layer.dimsize)

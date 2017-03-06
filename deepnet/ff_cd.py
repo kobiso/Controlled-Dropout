@@ -209,6 +209,13 @@ class ControlledDropoutNet(object):
                     pass
                 else:
                     layer.state.mult(1.0 - layer.hyperparams.dropout_prob)
+
+        # For Controlled Dropout, multiply 0.5 to produce expected output
+        if not train:
+            # layer.state.mult(0.5)
+            if layer.activation == 3:  # when it is hidden layer
+                # Controlled dropout
+                layer.state.mult(0.5)
         return perf
 
     def ComputeDown(self, layer, step):
@@ -611,8 +618,8 @@ class ControlledDropoutNet(object):
         del self.randNum[:]
         for node in range(1, len(self.node_list) - 1):  # Generate random numbers for only hidden layers (sorted, no-duplication)
             self.randNum.append(
-                np.array([0,2,4,6,8]))
-                # np.sort(np.random.choice(range(self.node_list[node].dimensions), self.node_list[node].dimensions/2, replace=False))) #no duplication
+                # np.array([0,2,4,6,8]))
+                np.sort(np.random.choice(range(self.node_list[node].dimensions), self.node_list[node].dimensions/2, replace=False))) #no duplication
 
     # TODO 3. Implement column wise dropout whose result should be equal with Controlled Dropout code
     def ConstructSmallNet(self):
