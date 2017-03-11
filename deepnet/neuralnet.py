@@ -3,6 +3,7 @@ import gzip
 import logging
 import sys
 import time
+import csv
 from google.protobuf import text_format
 
 from datahandler import *
@@ -187,13 +188,12 @@ class NeuralNet(object):
             b= np.random.choice(range(2),(a,1))
             # b = np.array([[1], [0], [1], [0], [1], [0], [1], [0], [1], [0]])
             layer.state.mult_by_col(mat.EigenMatrix(b))
-        """
         else:
           # multiply the dropout rate
           if layer.activation==3: # when it is hidden layer
             # Controlled dropout
             layer.state.mult(0.5)
-        """
+
 
       if layer.hyperparams.sparsity:
         layer.state.sum(axis=1, target=layer.dimsize)
@@ -423,6 +423,7 @@ class NeuralNet(object):
     for stat in stats:
       sys.stdout.write(GetPerformanceStats(stat, prefix=prefix))
     stats_list.extend(stats)
+    return stat
 
   def ScoreOneLabel(self, preds, targets):
     """Computes Average precision and precision at 50."""
@@ -619,18 +620,10 @@ class NeuralNet(object):
     for edge in self.edge:
       edge.Show()
 
-  def GetRandomNum(self):
-    """Get random column numbers for each layers which are using dropout"""
-    print 'The number of layers:', len(self.layer)
-    ranNum = []
-    for node in range(1, len(self.node_list)-1): # Generate random numbers for only hidden layers
-      ranNum.append(np.random.randint(0, self.node_list[node].dimensions-1, self.node_list[node].dimensions/2))
-
-    for node in self.node_list:
-      print node.inco
-
   def Train(self):
     """Train the model."""
+    start_time = time.time()
+
     assert self.t_op is not None, 't_op is None.'
     assert self.e_op is not None, 'e_op is None.'
     self.SetUpTrainer()
@@ -655,75 +648,96 @@ class NeuralNet(object):
       best_net = self.DeepCopy()
 
     dump_best = False
-    while not stop:
-      sys.stdout.write('\rTrain Step: %d' % step)
-      sys.stdout.flush()
-      self.GetTrainBatch()
 
-      #self.GetRandomNum()
+    with open('/home/hpc/github/ControlledDropout/deepnet/examples/csv/CDX.csv', 'w') as csvfile:
+      fieldnames = ['Step', 'T_CE', 'T_Acc', 'T_Res', 'V_CE', 'V_Acc', 'V_Res', 'E_CE', 'E_Acc', 'E_Res', 'Time']
+      writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+      writer.writeheader()
+      while not stop:
+        sys.stdout.write('\rTrain Step: %d' % step)
+        sys.stdout.flush()
+        self.GetTrainBatch()
 
-      losses = self.TrainOneBatch(step)
-      if stats:
-        for acc, loss in zip(stats, losses):
-          Accumulate(acc, loss)
-      else:
-        stats = losses
-      step += 1
-      if self.ShowNow(step):
-        self.Show()
-      if self.EvalNow(step):
-        # Print out training stats.
-        sys.stdout.write('\rStep %d ' % step)
-        for stat in stats:
-          sys.stdout.write(GetPerformanceStats(stat, prefix='T'))
-        self.net.train_stats.extend(stats)
-        stats = []
-        # Evaluate on validation set.
-        self.Evaluate(validation=True, collect_predictions=collect_predictions)
-        # Evaluate on test set.
-        self.Evaluate(validation=False, collect_predictions=collect_predictions)
-        if select_best:
-          valid_stat = self.net.validation_stats[-1]
-          if len(self.net.test_stats) > 1:
-            test_stat = self.net.test_stats[-1]
-          else:
-            test_stat = valid_stat
-          if select_model_using_error:
-            valid_error = valid_stat.error / valid_stat.count
-            _test_error = test_stat.error / test_stat.count
-          elif select_model_using_acc:
-            valid_error = 1 - float(valid_stat.correct_preds) / valid_stat.count
-            _test_error = 1 - float(test_stat.correct_preds) / test_stat.count
-          elif select_model_using_map:
-            valid_error = 1 - valid_stat.MAP
-            _test_error = 1 - test_stat.MAP
-          if valid_error < best_valid_error:
-            best_valid_error = valid_error
-            test_error = _test_error
-            dump_best = True
-            self.CopyModelToCPU()
-            self.t_op.current_step = step
-            self.net.best_valid_stat.CopyFrom(valid_stat)
-            self.net.train_stat_es.CopyFrom(self.net.train_stats[-1])
-            self.net.test_stat_es.CopyFrom(test_stat)
-            best_net = self.DeepCopy()
-            best_t_op = CopyOperation(self.t_op)
-        #for e in self.edge:
-        #  sys.stdout.write(' %s %.3f' % (e.name, e.params['weight'].euclid_norm()))
-        sys.stdout.write('\n')
-      if self.SaveNow(step):
-        self.t_op.current_step = step
-        self.CopyModelToCPU()
-        util.WriteCheckpointFile(self.net, self.t_op)
-        if dump_best:
-          dump_best = False
-          if select_model_using_error:
-            print 'Best valid error : %.4f Test error %.4f' % (best_valid_error, test_error)
-          elif select_model_using_acc:
-            print 'Best valid acc : %.4f Test acc %.4f' % (1-best_valid_error, 1-test_error)
-          elif select_model_using_map:
-            print 'Best valid MAP : %.4f Test MAP %.4f' % (1-best_valid_error, 1-test_error)
+        #self.GetRandomNum()
 
-          util.WriteCheckpointFile(best_net, best_t_op, best=True)
+        losses = self.TrainOneBatch(step)
+        if stats:
+          for acc, loss in zip(stats, losses):
+            Accumulate(acc, loss)
+        else:
+          stats = losses
+        step += 1
+        if self.ShowNow(step):
+          self.Show()
+        if self.EvalNow(step):
+          # Print out training stats.
+          sys.stdout.write('\rStep %d ' % step)
+          for stat in stats:
+            sys.stdout.write(GetPerformanceStats(stat, prefix='T'))
+          self.net.train_stats.extend(stats)
+          stats = []
+          # Evaluate on validation set.
+          val = self.Evaluate(validation=True, collect_predictions=collect_predictions)
+          # Evaluate on test set.
+          tes = self.Evaluate(validation=False, collect_predictions=collect_predictions)
 
-      stop = self.TrainStopCondition(step)
+          # Write on csv file
+          writer.writerow({'Step': step,
+                           'T_CE': stat.cross_entropy / stat.count,
+                           'T_Acc': stat.correct_preds / stat.count,
+                           'T_Res': stat.correct_preds,
+                           'V_CE': val.cross_entropy / val.count,
+                           'V_Acc': val.correct_preds / val.count,
+                           'V_Res': val.correct_preds,
+                           'E_CE': tes.cross_entropy / tes.count,
+                           'E_Acc': tes.correct_preds / tes.count,
+                           'E_Res': tes.correct_preds,
+                           'Time': time.time() - start_time
+                           })
+
+
+          if select_best:
+            valid_stat = self.net.validation_stats[-1]
+            if len(self.net.test_stats) > 1:
+              test_stat = self.net.test_stats[-1]
+            else:
+              test_stat = valid_stat
+            if select_model_using_error:
+              valid_error = valid_stat.error / valid_stat.count
+              _test_error = test_stat.error / test_stat.count
+            elif select_model_using_acc:
+              valid_error = 1 - float(valid_stat.correct_preds) / valid_stat.count
+              _test_error = 1 - float(test_stat.correct_preds) / test_stat.count
+            elif select_model_using_map:
+              valid_error = 1 - valid_stat.MAP
+              _test_error = 1 - test_stat.MAP
+            if valid_error < best_valid_error:
+              best_valid_error = valid_error
+              test_error = _test_error
+              dump_best = True
+              self.CopyModelToCPU()
+              self.t_op.current_step = step
+              self.net.best_valid_stat.CopyFrom(valid_stat)
+              self.net.train_stat_es.CopyFrom(self.net.train_stats[-1])
+              self.net.test_stat_es.CopyFrom(test_stat)
+              best_net = self.DeepCopy()
+              best_t_op = CopyOperation(self.t_op)
+          #for e in self.edge:
+          #  sys.stdout.write(' %s %.3f' % (e.name, e.params['weight'].euclid_norm()))
+          sys.stdout.write('\n')
+        if self.SaveNow(step):
+          self.t_op.current_step = step
+          self.CopyModelToCPU()
+          util.WriteCheckpointFile(self.net, self.t_op)
+          if dump_best:
+            dump_best = False
+            if select_model_using_error:
+              print 'Best valid error : %.4f Test error %.4f' % (best_valid_error, test_error)
+            elif select_model_using_acc:
+              print 'Best valid acc : %.4f Test acc %.4f' % (1-best_valid_error, 1-test_error)
+            elif select_model_using_map:
+              print 'Best valid MAP : %.4f Test MAP %.4f' % (1-best_valid_error, 1-test_error)
+
+            util.WriteCheckpointFile(best_net, best_t_op, best=True)
+
+        stop = self.TrainStopCondition(step)
