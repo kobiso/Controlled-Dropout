@@ -5,6 +5,7 @@ import sys
 import time
 import csv
 from google.protobuf import text_format
+from guppy import hpy
 
 from datahandler import *
 from convolutions import *
@@ -681,6 +682,8 @@ class ControlledDropoutNet(object):
     def Train(self):
         """Train the model."""
         start_time = time.time()
+        hp = hpy()
+
 
         assert self.t_op is not None, 't_op is None.'
         assert self.e_op is not None, 'e_op is None.'
@@ -708,10 +711,11 @@ class ControlledDropoutNet(object):
 
         dump_best = False
 
-        with open('/home/hpc/github/ControlledDropout/deepnet/examples/csv/example.csv', 'w') as csvfile:
+        with open('/home/hpc/github/ControlledDropout/deepnet/examples/csv/mem_test.csv', 'w') as csvfile:
             fieldnames = ['Step', 'T_CE', 'T_Acc', 'T_Res', 'V_CE', 'V_Acc', 'V_Res', 'E_CE', 'E_Acc', 'E_Res', 'Time']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
+
             while not stop:
                 sys.stdout.write('\rTrain Step: %d' % step)
                 sys.stdout.flush()
@@ -726,9 +730,13 @@ class ControlledDropoutNet(object):
                 # 2. Construct parameters(w, b) for small network
                 self.ConstructSmallNet()
 
+                if self.EvalNow(step):
+                    hp.setrelheap()
                 # 3. Train the batch
                 # losses = self.TrainOneBatch(step) # for orignial net
                 losses = self.small_net.TrainOneBatch(step) # SMALL) for small net
+                if self.EvalNow(step):
+                    x = hp.heap()
 
                 # 4. Update the parameters(W, b) of original network from small network
                 self.UpdateOriginalNet()
@@ -741,10 +749,12 @@ class ControlledDropoutNet(object):
                     stats = losses
                 step += 1
                 # if self.ShowNow(step):
-                #     self.Show()l
+                #     self.Show()
                 if self.EvalNow(step):
                     # Print out training stats.
                     sys.stdout.write('\rStep %d ' % step)
+                    print x
+                    #sys.stdout.write('Memory %d ' % x.size)
                     for stat in stats:
                         sys.stdout.write(GetPerformanceStats(stat, prefix='T'))
                     self.net.train_stats.extend(stats)
