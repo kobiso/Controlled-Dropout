@@ -625,59 +625,113 @@ class ControlledDropoutNet(object):
                 np.sort(np.random.choice(range(self.node_list[node].dimensions), self.node_list[node].dimensions/2, replace=False))) #no duplication
 
     # TODO 3. Implement column wise dropout whose result should be equal with Controlled Dropout code
+    """
+    def ConstructSmallNet(self):
+        # Construct parameters(w, b) for small network with random numbers.
+        # weight: self.edge[i].params['weight'] (0~3): (784x1024),(1024x1024),(1024x2048),(2048x10)
+        # bias: self.layer[i].params['bias'] (0~4): (-),(10x1),(1024,1),(1024,1),(2048,1)
+
+
+
+    def UpdateOriginalNet(self):
+        # Update parameters(W, b) of small net to parameters(W, b) of original net
+
+
+    """
     def ConstructSmallNet(self):
         """Construct parameters(w, b) for small network with random numbers."""
         # weight: self.edge[i].params['weight'] (0~3): (784x1024),(1024x1024),(1024x2048),(2048x10)
         # bias: self.layer[i].params['bias'] (0~4): (-),(10x1),(1024,1),(1024,1),(2048,1)
 
-        # Update weight
-        # self.small_net.edge[0].params['weight'].overwrite(self.edge[0].params['weight'].numpy_array[..., self.randNum[0]])
-        self.small_net.edge[0].params['weight']=cm.EigenMatrix(self.edge[0].params['weight'].numpy_array[..., self.randNum[0]])
+        if use_gpu == 'yes':
+            # Update weight
+            temp = self.edge[0].params['weight'].asarray()
+            self.small_net.edge[0].params['weight'].overwrite(temp[..., self.randNum[0]])
 
-        for i in range(len(self.randNum) - 1): # TODO: Can be combined with only a 'for' statement
-            # self.small_net.edge[i + 1].params['weight'].overwrite(\
-            #     self.edge[i + 1].params['weight'].numpy_array[self.randNum[i][:, np.newaxis], self.randNum[i + 1]])
-            self.small_net.edge[i + 1].params['weight']=\
-                cm.EigenMatrix(self.edge[i + 1].params['weight'].numpy_array[self.randNum[i][:, np.newaxis], self.randNum[i + 1]])
-        # self.small_net.edge[len(self.randNum)].params['weight'].overwrite(\
-        #     self.edge[len(self.randNum)].params['weight'].numpy_array[self.randNum[-1], ...])
-        self.small_net.edge[len(self.randNum)].params['weight']=\
-            cm.EigenMatrix(self.edge[len(self.randNum)].params['weight'].numpy_array[self.randNum[-1], ...])
+            for i in range(len(self.randNum) - 1):
+                temp = self.edge[i + 1].params['weight'].asarray()
+                self.small_net.edge[i + 1].params['weight'].overwrite(temp[self.randNum[i][:, np.newaxis], self.randNum[i + 1]])
 
-        # Update bias
-        for i in range(len(self.randNum)):
-            # self.small_net.layer[i+2].params['bias'].overwrite(self.layer[i+2].params['bias'].numpy_array[self.randNum[i]])
-            self.small_net.layer[i + 2].params['bias']=cm.EigenMatrix(self.layer[i+2].params['bias'].numpy_array[self.randNum[i]])
+            temp = self.edge[len(self.randNum)].params['weight'].asarray()
+            self.small_net.edge[len(self.randNum)].params['weight'].overwrite(temp[self.randNum[-1], ...])
 
-        # self.small_net.layer[1].params['bias'].overwrite(self.layer[1].params['bias'].numpy_array)
-        self.small_net.layer[1].params['bias']=cm.EigenMatrix(self.layer[1].params['bias'].numpy_array)
+            # Update bias
+            for i in range(len(self.randNum)):
+                temp = self.layer[i + 2].params['bias'].asarray()
+                self.small_net.layer[i + 2].params['bias'].overwrite(temp[self.randNum[i]])
+
+            temp = self.layer[1].params['bias'].asarray()
+            self.small_net.layer[1].params['bias'].overwrite(temp)
+
+        elif use_gpu == 'no':
+            # Update weight
+            self.small_net.edge[0].params['weight'] = cm.EigenMatrix(
+                self.edge[0].params['weight'].numpy_array[..., self.randNum[0]])
+
+            for i in range(len(self.randNum) - 1):  # TODO: Can be combined with only a 'for' statement
+                self.small_net.edge[i + 1].params['weight'] = \
+                    cm.EigenMatrix(self.edge[i + 1].params['weight'].numpy_array[
+                                       self.randNum[i][:, np.newaxis], self.randNum[i + 1]])
+            self.small_net.edge[len(self.randNum)].params['weight'] = \
+                cm.EigenMatrix(self.edge[len(self.randNum)].params['weight'].numpy_array[self.randNum[-1], ...])
+
+            # Update bias
+            for i in range(len(self.randNum)):
+                self.small_net.layer[i + 2].params['bias'] = cm.EigenMatrix(
+                    self.layer[i + 2].params['bias'].numpy_array[self.randNum[i]])
+            self.small_net.layer[1].params['bias'] = cm.EigenMatrix(self.layer[1].params['bias'].numpy_array)
 
     def UpdateOriginalNet(self):
         """Update parameters(W, b) of small net to parameters(W, b) of original net"""
 
-        # Update weight
-        temp = np.copy(self.edge[0].params['weight'].numpy_array)
-        temp[..., self.randNum[0]] = self.small_net.edge[0].params['weight'].numpy_array
-        self.edge[0].params['weight']=cm.EigenMatrix(temp)
+        if use_gpu == 'yes':
+            # Update weight
+            temp = self.edge[0].params['weight'].asarray()
+            temp[..., self.randNum[0]] = self.small_net.edge[0].params['weight'].asarray()
+            self.edge[0].params['weight'].overwrite(temp)
 
-        for i in range(len(self.randNum) - 1):
-            temp = np.copy(self.edge[i + 1].params['weight'].numpy_array)
-            temp[self.randNum[i][:, np.newaxis], self.randNum[i + 1]] = \
-                self.small_net.edge[i + 1].params['weight'].numpy_array
-            self.edge[i + 1].params['weight']=cm.EigenMatrix(temp)
+            for i in range(len(self.randNum) - 1):
+                temp = self.edge[i + 1].params['weight'].asarray()
+                temp[self.randNum[i][:, np.newaxis], self.randNum[i + 1]] = self.small_net.edge[i + 1].params['weight'].asarray()
+                self.edge[i + 1].params['weight'].overwrite(temp)
 
-        temp = np.copy(self.edge[len(self.randNum)].params['weight'].numpy_array)
-        temp[self.randNum[len(self.randNum) - 1], ...] = \
-            self.small_net.edge[len(self.randNum)].params['weight'].numpy_array
-        self.edge[len(self.randNum)].params['weight']=cm.EigenMatrix(temp)
+            temp = self.edge[len(self.randNum)].params['weight'].asarray()
+            temp[self.randNum[len(self.randNum) - 1], ...] = self.small_net.edge[len(self.randNum)].params['weight'].asarray()
+            self.edge[len(self.randNum)].params['weight'].overwrite(temp)
 
-        # Update bias
-        for i in range(len(self.randNum)):
-            temp = np.copy(self.layer[i + 2].params['bias'].numpy_array)
-            temp[self.randNum[i]] = self.small_net.layer[i+2].params['bias'].numpy_array
-            self.layer[i + 2].params['bias']=cm.EigenMatrix(temp)
+            # Update bias
+            for i in range(len(self.randNum)):
+                temp = self.layer[i + 2].params['bias'].asarray()
+                temp[self.randNum[i]] = self.small_net.layer[i + 2].params['bias'].asarray()
+                self.layer[i + 2].params['bias'].overwrite(temp)
 
-        self.layer[1].params['bias']=cm.EigenMatrix(self.small_net.layer[1].params['bias'].numpy_array)
+            temp = self.small_net.layer[1].params['bias'].asarray()
+            self.layer[1].params['bias'].overwrite(temp)
+
+        elif use_gpu == 'no':
+            # Update weight
+            temp = np.copy(self.edge[0].params['weight'].numpy_array)
+            temp[..., self.randNum[0]] = self.small_net.edge[0].params['weight'].numpy_array
+            self.edge[0].params['weight'] = cm.EigenMatrix(temp)
+
+            for i in range(len(self.randNum) - 1):
+                temp = np.copy(self.edge[i + 1].params['weight'].numpy_array)
+                temp[self.randNum[i][:, np.newaxis], self.randNum[i + 1]] = \
+                    self.small_net.edge[i + 1].params['weight'].numpy_array
+                self.edge[i + 1].params['weight'] = cm.EigenMatrix(temp)
+
+            temp = np.copy(self.edge[len(self.randNum)].params['weight'].numpy_array)
+            temp[self.randNum[len(self.randNum) - 1], ...] = \
+                self.small_net.edge[len(self.randNum)].params['weight'].numpy_array
+            self.edge[len(self.randNum)].params['weight'] = cm.EigenMatrix(temp)
+
+            # Update bias
+            for i in range(len(self.randNum)):
+                temp = np.copy(self.layer[i + 2].params['bias'].numpy_array)
+                temp[self.randNum[i]] = self.small_net.layer[i + 2].params['bias'].numpy_array
+                self.layer[i + 2].params['bias'] = cm.EigenMatrix(temp)
+
+            self.layer[1].params['bias'] = cm.EigenMatrix(self.small_net.layer[1].params['bias'].numpy_array)
 
     def Train(self):
         """Train the model."""
