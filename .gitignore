@@ -5,8 +5,6 @@
 
 cudamat/
 
-deepnet/examples/mnist/
-
-deepnet/examples/cifar10/
-
 deepnet/sss\.py
+
+*.npy
