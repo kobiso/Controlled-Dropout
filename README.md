@@ -1,7 +1,8 @@
-deepnet
+Controlled Dropout
 =======
+Implementation of Controlled Dropout by Revising DeepNet.
 
-## Implementation of some deep learning algorithms. ##
+## DeepNet: Implementation of some deep learning algorithms. ##
 
 GPU-based python implementation of
 
