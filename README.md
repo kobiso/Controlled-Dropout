@@ -12,7 +12,7 @@ DeepNet includes GPU-based python implementation of
 5.  Deep Boltzmann Machines
 6.  Convolutional Neural Nets
 
-Built on top of the [cudamat](http://code.google.com/p/cudamat/) library by Vlad Mnih and [cuda-convnet](http://code.google.com/p/cuda-convnet/) library by Alex Krizhevsky.
+which is built on top of the [cudamat](http://code.google.com/p/cudamat/) library by Vlad Mnih and [cuda-convnet](http://code.google.com/p/cuda-convnet/) library by Alex Krizhevsky. We revised Feed-forward Neural Nets and Convolutional Neural Nets for Controlled Dropout.
 
 ## Research Summary
 - **Problem Statement**
@@ -24,7 +24,7 @@ Built on top of the [cudamat](http://code.google.com/p/cudamat/) library by Vlad
 
 - **Solution Proposed: Controlled Dropout**
     - Improve training speed by eliminating redundant computation of dropout
-    - Dropout units in a column-wise or row-wise manner, and train the network using compressed matrices
+    - Drop units in a column-wise or row-wise manner, and train the network using compressed matrices
 
 - **Contribution**
     - Training speed of FFNN and CNN is improved on both GPU and CPU.
