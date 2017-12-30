@@ -87,7 +87,6 @@ class EigenMatrix(object):
 
   def overwrite(self, array):
     """Overwrites self with array.
-    
     'array' should have a size smaller than that of the array used to
     initialize the EigenMatrix. The method will not throw an Exception just
     yet if this is not true. It will throw exceptions or behave in strange
