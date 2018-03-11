@@ -14,7 +14,12 @@ DeepNet includes GPU-based python implementation of
 
 which is built on top of the [cudamat](http://code.google.com/p/cudamat/) library by Vlad Mnih and [cuda-convnet](http://code.google.com/p/cuda-convnet/) library by Alex Krizhevsky. We revised Feed-forward Neural Nets and Convolutional Neural Nets for Controlled Dropout.
 
+- [**Presentation material in SMC 2017**](https://www.slideshare.net/ByungSooKo1/controlled-dropout-a-different-dropout-for-improving-training-speed-on-deep-neural-network)
+
 ## Research Summary
+- **Controlled Dropout**
+<p align="center"><img src="/images/controlled_dropout.png" height="250" width="700"></p>
+
 - **Problem Statement**
     - Dropout takes longer time to train deep neural networks.
     - **Observation**: Dropout results in many zero element multiplications, which is redundant computation.
@@ -45,7 +50,7 @@ which is built on top of the [cudamat](http://code.google.com/p/cudamat/) librar
 		export LD_LIBRARY_PATH=\${CUDA_LIB}:\$LD_LIBRARY_PATH
 
     - [Protocol Buffers](http://code.google.com/p/protobuf/)
-      - Make sure that the PATH environment variable includes the directory that contains the protocol buffer compiler - protoc. For example, export PATH=/usr/local/bin:$PATH
+    	- Make sure that the PATH environment variable includes the directory that contains the protocol buffer compiler - protoc. For example, export PATH=/usr/local/bin:$PATH
 
 2. Compiling Cudamat and Cudamat_conv
     - DeepNet uses Vlad Mnih's cudamat library and Alex Krizhevsky's cuda-convnet library. Some additional kernels have been added. To compile the library - run make in the cudamat dir.
@@ -69,3 +74,10 @@ which is built on top of the [cudamat](http://code.google.com/p/cudamat/) librar
 
   - [SVHN](http://ufldl.stanford.edu/housenumbers/) dataset
     - SVHN is labeled subsets of house numbers in Google Street View.
+
+## Reference
+- [Dropout: A Simple Way to Prevent Neural Networks from Overfitting](https://www.cs.toronto.edu/~hinton/absps/JMLRdropout.pdf)
+- [DeepNet](https://github.com/nitishsrivastava/deepnet)
+  
+## Author
+Byung Soo Ko / kobiso62@gmail.com
